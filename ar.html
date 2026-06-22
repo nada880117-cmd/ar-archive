@@ -56,9 +56,13 @@
     loading-screen="enabled: false"
     renderer="colorManagement: true; antialias: true">
 
-    <a-camera position="0 1.6 0"
+    <a-camera position="0 0 0"
               look-controls="enabled: false"
-              wasd-controls="enabled: false"></a-camera>
+              wasd-controls="enabled: false">
+      <!-- 진단용: 카메라에 붙어 항상 정면 1m에 떠다니는 초록 박스 -->
+      <a-box id="cam-test" position="0 0 -1" scale="0.2 0.2 0.2"
+             material="color: #39ff14; emissive: #39ff14; emissiveIntensity: 1; shader: flat"></a-box>
+    </a-camera>
   </a-scene>
 </body>
 </html>
