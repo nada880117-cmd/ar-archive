@@ -53,6 +53,7 @@
     <button class="btn green" id="ar-link">AR로 보기 ▶</button>
     <button class="btn gray" id="export">내보내기</button>
     <button class="btn gray" id="import">가져오기</button>
+    <button class="btn gray" id="pull">공유본 불러오기</button>
     <span class="saved" id="saved">✓ 자동 저장됨</span>
     <input type="file" id="file" accept="application/json" hidden>
   </header>
@@ -182,7 +183,18 @@
     document.getElementById('export').addEventListener('click', function () {
       var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-      a.download = 'ar-archive-content.json'; a.click();
+      a.download = 'content.json'; a.click();
+    });
+    document.getElementById('pull').addEventListener('click', function () {
+      if (!confirm('저장소의 공유본(content.json)을 불러옵니다. 이 기기의 현재 편집 내용은 덮어써집니다. 계속할까요?')) return;
+      fetch('content.json?v=' + Date.now()).then(function (r) {
+        if (!r.ok) throw new Error('content.json 없음 (아직 배포 안 됨)');
+        return r.json();
+      }).then(function (d) {
+        if (!Array.isArray(d)) throw new Error('형식 오류');
+        data = d; selId = data.length ? data[0].id : null; save(); renderAll();
+        alert('공유본 ' + d.length + '개 불러옴');
+      }).catch(function (e) { alert('불러오기 실패: ' + e.message); });
     });
     document.getElementById('import').addEventListener('click', function () { document.getElementById('file').click(); });
     document.getElementById('file').addEventListener('change', function (ev) {

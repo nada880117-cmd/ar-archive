@@ -20,6 +20,7 @@ window.Store = {
     ];
   },
 
+  // 편집기용: 이 기기 로컬 작업본
   load() {
     try {
       const s = localStorage.getItem(this.KEY);
@@ -29,6 +30,18 @@ window.Store = {
       }
     } catch (e) {}
     return this.defaults();
+  },
+
+  // AR(방문자)용: 저장소 공유본(content.json) 우선 → 없으면 로컬 → 기본값
+  async loadShared() {
+    try {
+      const res = await fetch('content.json?v=' + Date.now());
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length) return data;
+      }
+    } catch (e) {}
+    return this.load();
   },
 
   save(data) {

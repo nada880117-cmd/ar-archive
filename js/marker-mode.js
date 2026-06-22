@@ -23,9 +23,9 @@
     window.DBG && DBG.log('프레임 ' + data.length + '개 연결 (targetIndex 0~' + (data.length - 1) + ')');
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener('DOMContentLoaded', async function () {
     var scene = document.querySelector('a-scene');
-    var data = window.Store ? window.Store.load() : [];
+    var data = window.Store ? await window.Store.loadShared() : [];
 
     if (window.AppState) {
       window.AppState.total = data.length;
