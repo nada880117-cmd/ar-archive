@@ -3,53 +3,56 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>AR 아카이브 편집 (액자/마커)</title>
+  <title>AR 아카이브 편집</title>
   <script src="js/data-store.js"></script>
   <style>
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { margin: 0; font-family: "Noto Sans KR", system-ui, sans-serif;
-           background: #0e1525; color: #e9eef7; padding-bottom: 40px; }
-    header { position: sticky; top: 0; z-index: 5; background: #11192c;
-             padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-             border-bottom: 1px solid #243049; }
+    body { margin: 0; font-family: "Noto Sans KR", system-ui, sans-serif; background: #0e1525; color: #e9eef7; padding-bottom: 40px; }
+    header { position: sticky; top: 0; z-index: 5; background: #11192c; padding: 12px 14px;
+             display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-bottom: 1px solid #243049; }
     header h1 { font-size: 16px; margin: 0; flex: 1 1 auto; }
     .btn { border: 0; border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 700; color: #fff; background: #2E86C1; }
-    .btn.gray { background: #33415c; }
-    .btn.green { background: #27AE60; }
-    .btn.sm { padding: 5px 9px; font-size: 13px; }
+    .btn.gray { background: #33415c; } .btn.green { background: #27AE60; }
     .saved { font-size: 12px; color: #6fe39a; flex: 1 1 100%; }
 
-    .layout { display: grid; grid-template-columns: 1fr 1.2fr; gap: 14px; padding: 14px; max-width: 1100px; margin: 0 auto; align-items: start; }
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 14px; max-width: 1100px; margin: 0 auto; align-items: start; }
     @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
     .col { display: flex; flex-direction: column; gap: 14px; }
     .card { background: #16203a; border: 1px solid #243049; border-radius: 14px; padding: 14px; }
     .card h2 { font-size: 14px; margin: 0 0 10px; color: #9fb3d1; }
 
-    /* 프레임 목록 */
-    .frame { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #2c3a57;
-             border-radius: 10px; background: #0f1830; margin-bottom: 8px; }
-    .frame.sel { border-color: #fff; }
-    .frame .idx { width: 26px; height: 26px; flex: none; border-radius: 6px; background: #243049;
-                  display: grid; place-items: center; font-size: 12px; font-weight: 700; }
-    .frame .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; }
-    .frame .nm { flex: 1; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .frame .ord { display: flex; flex-direction: column; gap: 2px; }
-    .frame .ord button { border: 0; background: #33415c; color: #fff; border-radius: 4px; width: 26px; height: 16px; font-size: 10px; line-height: 1; }
+    #map { position: relative; width: 100%; aspect-ratio: 1/1;
+           background: linear-gradient(#243049 1px, transparent 1px) 0 0/100% 12.5%,
+                       linear-gradient(90deg, #243049 1px, transparent 1px) 0 0/12.5% 100%, #0b1222;
+           border: 1px solid #2c3a57; border-radius: 12px; touch-action: none; overflow: hidden; }
+    #map .center { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 22px; height: 22px;
+                   border-radius: 50%; background: #fff; display: grid; place-items: center; font-size: 12px; pointer-events: none; }
+    #map .axis { position: absolute; color: #4a5e83; font-size: 11px; pointer-events: none; }
+    #map .ax-f { top: 4px; left: 50%; transform: translateX(-50%); } #map .ax-b { bottom: 4px; left: 50%; transform: translateX(-50%); }
+    #map .ax-l { left: 4px; top: 50%; transform: translateY(-50%); } #map .ax-r { right: 4px; top: 50%; transform: translateY(-50%); }
+    .dot { position: absolute; width: 38px; height: 38px; border-radius: 50%; transform: translate(-50%,-50%);
+           display: grid; place-items: center; font-size: 10px; font-weight: 700; color: #fff;
+           border: 2px solid rgba(255,255,255,.4); box-shadow: 0 0 8px rgba(0,0,0,.5); pointer-events: none; }
+    .dot.sel { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.55); }
+    .hint { color: #6f86a8; font-size: 12px; text-align: center; margin: 8px 0 0; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { border: 1px solid #2c3a57; border-radius: 999px; padding: 7px 12px; font-size: 13px;
+            display: flex; align-items: center; gap: 7px; background: #0f1830; }
+    .chip.sel { border-color: #fff; } .chip i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
 
     label { display: block; font-size: 12px; color: #9fb3d1; margin: 12px 0 4px; }
     input, textarea { width: 100%; background: #0f1830; border: 1px solid #2c3a57; border-radius: 8px;
             color: #e9eef7; padding: 10px; font-size: 14px; font-family: inherit; }
     textarea { resize: vertical; min-height: 60px; }
     .row { display: flex; gap: 10px; } .row > div { flex: 1; }
-    input[type=color] { padding: 4px; height: 42px; }
-    .danger { background: #c0392b; }
-    .muted { color: #6f86a8; font-size: 12px; line-height: 1.6; }
-    .thumb { max-width: 100%; max-height: 120px; border-radius: 8px; margin-top: 6px; display: none; }
+    input[type=color] { padding: 4px; height: 42px; } input[type=range] { padding: 0; }
+    .danger { background: #c0392b; } .muted { color: #6f86a8; font-size: 12px; line-height: 1.6; }
   </style>
 </head>
 <body>
   <header>
-    <h1>🖼️ 액자 콘텐츠 편집</h1>
+    <h1>🏛️ AR 콘텐츠 편집</h1>
     <button class="btn green" id="ar-link">AR로 보기 ▶</button>
     <button class="btn gray" id="export">내보내기</button>
     <button class="btn gray" id="import">가져오기</button>
@@ -59,38 +62,40 @@
   </header>
 
   <div class="layout">
-    <!-- 왼쪽: 프레임 순서 -->
     <div class="col">
       <div class="card">
-        <h2>🖼️ 액자(프레임) 순서</h2>
-        <div id="list"></div>
-        <button class="btn" id="add" style="margin-top:6px;">＋ 액자 추가</button>
-        <p class="muted" style="margin-top:10px;">
-          이 <b>순서(#1, #2 …)</b>가 인식표 파일(targets.mind) 컴파일 순서와 같아야 합니다.<br>
-          ▲▼ 로 순서를 바꿀 수 있어요.
-        </p>
+        <h2>📍 배치 (위에서 본 모습 · 가운데가 시작 지점)</h2>
+        <div id="map">
+          <div class="center" title="시작 지점">🧍</div>
+          <div class="axis ax-f">앞</div><div class="axis ax-b">뒤</div>
+          <div class="axis ax-l">왼쪽</div><div class="axis ax-r">오른쪽</div>
+        </div>
+        <p class="hint">콘텐츠(원)를 끌어서 위치를 옮기세요. 탭하면 선택. (범위 ±5m)</p>
+      </div>
+      <div class="card">
+        <h2>🔵 콘텐츠 목록</h2>
+        <div class="chips" id="chips"></div>
+        <button class="btn" id="add" style="margin-top:12px;">＋ 새 콘텐츠 추가</button>
       </div>
     </div>
 
-    <!-- 오른쪽: 선택 편집 -->
     <div class="col">
       <div class="card">
-        <h2>✏️ 선택한 액자 편집</h2>
+        <h2>✏️ 선택한 콘텐츠 편집</h2>
         <div id="form"></div>
       </div>
       <p class="muted">
-        ※ 편집 내용은 <b>이 태블릿</b>에 자동 저장됩니다.<br>
-        ※ 사진/영상/마커는 인터넷 주소(https://…) 또는 저장소 경로(assets/…)를 넣으세요.<br>
-        ※ <b>마커 이미지</b> = 그 액자에 들어가는 실제 사진(인식 대상). 이 사진들로 targets.mind 를 만듭니다.<br>
-        ※ 백업/이동은 <b>내보내기</b> JSON 사용.
+        ※ 편집은 이 기기에 자동 저장됩니다. <b>모든 기기에 반영</b>하려면 "내보내기" → 파일을 개발자에게 전달.<br>
+        ※ 사진/영상은 인터넷 주소(https://…) 또는 저장소 경로(assets/…)를 넣으세요.<br>
+        ※ 다른 기기 최신본을 가져오려면 "공유본 불러오기".
       </p>
     </div>
   </div>
 
   <script>
-    var data = Store.load();
-    var selId = data.length ? data[0].id : null;
-    var listEl = document.getElementById('list');
+    var RANGE = 5, data = [], selId = null, dragE = null;
+    var mapEl = document.getElementById('map');
+    var chipsEl = document.getElementById('chips');
     var formEl = document.getElementById('form');
     var savedEl = document.getElementById('saved');
 
@@ -99,118 +104,125 @@
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
-    function renderList() {
-      listEl.innerHTML = '';
-      data.forEach(function (e, i) {
-        var row = document.createElement('div');
-        row.className = 'frame' + (e.id === selId ? ' sel' : '');
-        row.innerHTML =
-          '<div class="idx">#' + (i + 1) + '</div>' +
-          '<div class="dot" style="background:' + e.color + '"></div>' +
-          '<div class="nm">' + esc(e.title || '(제목없음)') + '</div>' +
-          '<div class="ord"><button data-up="' + i + '">▲</button><button data-dn="' + i + '">▼</button></div>';
-        row.querySelector('.nm').addEventListener('click', function () { selId = e.id; renderAll(); });
-        row.querySelector('.idx').addEventListener('click', function () { selId = e.id; renderAll(); });
-        row.querySelector('.dot').addEventListener('click', function () { selId = e.id; renderAll(); });
-        listEl.appendChild(row);
-      });
-      listEl.querySelectorAll('[data-up]').forEach(function (b) {
-        b.addEventListener('click', function () { move(+b.getAttribute('data-up'), -1); });
-      });
-      listEl.querySelectorAll('[data-dn]').forEach(function (b) {
-        b.addEventListener('click', function () { move(+b.getAttribute('data-dn'), 1); });
+    function xToPx(x) { return (x + RANGE) / (2 * RANGE) * mapEl.clientWidth; }
+    function zToPy(z) { return (z + RANGE) / (2 * RANGE) * mapEl.clientHeight; }
+    function pxToX(px) { return Math.max(-RANGE, Math.min(RANGE, px / mapEl.clientWidth * 2 * RANGE - RANGE)); }
+    function pyToZ(py) { return Math.max(-RANGE, Math.min(RANGE, py / mapEl.clientHeight * 2 * RANGE - RANGE)); }
+
+    function renderMap() {
+      Array.prototype.slice.call(mapEl.querySelectorAll('.dot')).forEach(function (d) { d.remove(); });
+      data.forEach(function (e) {
+        if (e.x == null) e.x = 0; if (e.z == null) e.z = -2;
+        var dot = document.createElement('div');
+        dot.className = 'dot' + (e.id === selId ? ' sel' : '');
+        dot.style.background = e.color; dot.style.left = xToPx(e.x) + 'px'; dot.style.top = zToPy(e.z) + 'px';
+        dot.textContent = (e.title || '').slice(0, 4);
+        mapEl.appendChild(dot);
       });
     }
+    mapEl.addEventListener('pointerdown', function (ev) {
+      var r = mapEl.getBoundingClientRect(), px = ev.clientX - r.left, py = ev.clientY - r.top, hit = null, best = 1e9;
+      data.forEach(function (e) { var d = Math.hypot(xToPx(e.x) - px, zToPy(e.z) - py); if (d < 30 && d < best) { best = d; hit = e; } });
+      if (!hit) return;
+      dragE = hit; selId = hit.id; mapEl.setPointerCapture(ev.pointerId); renderAll();
+    });
+    mapEl.addEventListener('pointermove', function (ev) {
+      if (!dragE) return;
+      var r = mapEl.getBoundingClientRect();
+      dragE.x = +pxToX(ev.clientX - r.left).toFixed(2); dragE.z = +pyToZ(ev.clientY - r.top).toFixed(2);
+      renderMap();
+      var xf = document.getElementById('f-x'), zf = document.getElementById('f-z');
+      if (xf) xf.value = dragE.x; if (zf) zf.value = dragE.z;
+    });
+    function endDrag() { if (dragE) { dragE = null; save(); } }
+    mapEl.addEventListener('pointerup', endDrag); mapEl.addEventListener('pointercancel', endDrag);
 
-    function move(i, dir) {
-      var j = i + dir;
-      if (j < 0 || j >= data.length) return;
-      var tmp = data[i]; data[i] = data[j]; data[j] = tmp;
-      save(); renderAll();
+    function renderChips() {
+      chipsEl.innerHTML = '';
+      data.forEach(function (e) {
+        var c = document.createElement('div');
+        c.className = 'chip' + (e.id === selId ? ' sel' : '');
+        c.innerHTML = '<i style="background:' + e.color + '"></i>' + esc(e.title || '(제목없음)');
+        c.addEventListener('click', function () { selId = e.id; renderAll(); });
+        chipsEl.appendChild(c);
+      });
     }
 
     function renderForm() {
       var e = sel();
-      if (!e) { formEl.innerHTML = '<p class="muted">액자를 추가하거나 선택하세요.</p>'; return; }
+      if (!e) { formEl.innerHTML = '<p class="muted">콘텐츠를 추가하거나 선택하세요.</p>'; return; }
       formEl.innerHTML =
         '<label>제목</label><input id="f-title" value="' + esc(e.title) + '">' +
         '<div class="row"><div><label>연도</label><input id="f-year" value="' + esc(e.year) + '"></div>' +
-        '<div><label>색상(유물 색)</label><input id="f-color" type="color" value="' + (e.color || '#2E86C1') + '"></div></div>' +
-        '<label>🎯 마커 이미지 주소 (이 액자의 실제 사진)</label><input id="f-marker" value="' + esc(e.marker) + '" placeholder="assets/markers/액자1.jpg">' +
-        '<img class="thumb" id="thumb">' +
+        '<div><label>색상</label><input id="f-color" type="color" value="' + (e.color || '#2E86C1') + '"></div></div>' +
         '<label>설명</label><textarea id="f-text">' + esc(e.text) + '</textarea>' +
         '<label>사진 주소 (한 줄에 하나)</label><textarea id="f-images" placeholder="assets/photos/사진1.jpg">' + esc((e.images || []).join('\n')) + '</textarea>' +
         '<label>🎬 영상 주소</label><input id="f-video" value="' + esc(e.video) + '" placeholder="assets/videos/영상.mp4 또는 https://...">' +
-        '<button class="btn danger" id="del" style="margin-top:16px;">이 액자 삭제</button>';
-
-      bindThumb(e);
-      bind('f-title', 'title', function () { renderList(); });
-      bind('f-year', 'year');
-      bind('f-color', 'color', function () { renderList(); });
-      bind('f-marker', 'marker', function () { bindThumb(sel()); });
-      bind('f-text', 'text');
+        '<label>높이 (y): <span id="f-y-val">' + (e.y || 1.4) + '</span> m</label><input id="f-y" type="range" min="0" max="3" step="0.1" value="' + (e.y || 1.4) + '">' +
+        '<div class="row" style="margin-top:6px;"><div><label>좌우(x)</label><input id="f-x" value="' + e.x + '" readonly></div><div><label>앞뒤(z)</label><input id="f-z" value="' + e.z + '" readonly></div></div>' +
+        '<button class="btn danger" id="del" style="margin-top:16px;">이 콘텐츠 삭제</button>';
+      bind('f-title', 'title', function () { renderChips(); renderMap(); });
+      bind('f-year', 'year'); bind('f-text', 'text');
+      bind('f-color', 'color', function () { renderMap(); renderChips(); });
       bind('f-video', 'video');
       document.getElementById('f-images').addEventListener('input', function () {
         e.images = this.value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean); save();
       });
+      document.getElementById('f-y').addEventListener('input', function () {
+        e.y = +this.value; document.getElementById('f-y-val').textContent = e.y; save();
+      });
       document.getElementById('del').addEventListener('click', function () {
-        if (!confirm('"' + (e.title || '이 액자') + '" 을(를) 삭제할까요?')) return;
+        if (!confirm('"' + (e.title || '이 콘텐츠') + '" 을(를) 삭제할까요?')) return;
         data = data.filter(function (x) { return x.id !== e.id; });
         selId = data.length ? data[0].id : null; save(); renderAll();
       });
     }
-
-    function bindThumb(e) {
-      var img = document.getElementById('thumb'); if (!img) return;
-      if (e && e.marker) { img.src = e.marker; img.style.display = 'block';
-        img.onerror = function () { img.style.display = 'none'; }; }
-      else { img.style.display = 'none'; }
-    }
-
     function bind(id, key, after) {
       var el = document.getElementById(id); if (!el) return;
-      el.addEventListener('input', function () {
-        var e = sel(); if (!e) return; e[key] = this.value; save(); if (after) after();
-      });
+      el.addEventListener('input', function () { var e = sel(); if (!e) return; e[key] = this.value; save(); if (after) after(); });
     }
-
-    function renderAll() { renderList(); renderForm(); }
+    function renderAll() { renderMap(); renderChips(); renderForm(); }
 
     document.getElementById('add').addEventListener('click', function () {
-      var e = Store.blank(); data.push(e); selId = e.id; save(); renderAll();
+      var e = Store.blank();
+      // 새 콘텐츠는 시작점 주변에 흩어 배치 (겹침 방지)
+      var n = data.length, ang = n * 0.9;
+      e.x = +(Math.sin(ang) * 2).toFixed(2); e.z = +(-2 - Math.cos(ang)).toFixed(2);
+      data.push(e); selId = e.id; save(); renderAll();
     });
     document.getElementById('ar-link').addEventListener('click', function () { location.href = 'ar.html'; });
     document.getElementById('export').addEventListener('click', function () {
       var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-      a.download = 'content.json'; a.click();
-    });
-    document.getElementById('pull').addEventListener('click', function () {
-      if (!confirm('저장소의 공유본(content.json)을 불러옵니다. 이 기기의 현재 편집 내용은 덮어써집니다. 계속할까요?')) return;
-      fetch('content.json?v=' + Date.now()).then(function (r) {
-        if (!r.ok) throw new Error('content.json 없음 (아직 배포 안 됨)');
-        return r.json();
-      }).then(function (d) {
-        if (!Array.isArray(d)) throw new Error('형식 오류');
-        data = d; selId = data.length ? data[0].id : null; save(); renderAll();
-        alert('공유본 ' + d.length + '개 불러옴');
-      }).catch(function (e) { alert('불러오기 실패: ' + e.message); });
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'content.json'; a.click();
     });
     document.getElementById('import').addEventListener('click', function () { document.getElementById('file').click(); });
     document.getElementById('file').addEventListener('change', function (ev) {
       var f = ev.target.files[0]; if (!f) return;
       var r = new FileReader();
       r.onload = function () {
-        try {
-          var d = JSON.parse(r.result);
+        try { var d = JSON.parse(r.result);
           if (Array.isArray(d)) { data = d; selId = data.length ? data[0].id : null; save(); renderAll(); alert('가져오기 완료'); }
-          else alert('형식이 올바르지 않습니다.');
-        } catch (e) { alert('JSON 읽기 실패: ' + e.message); }
+          else alert('형식 오류'); } catch (e) { alert('JSON 읽기 실패: ' + e.message); }
       };
       r.readAsText(f);
     });
+    document.getElementById('pull').addEventListener('click', function () {
+      if (!confirm('저장소 공유본(content.json)을 불러옵니다. 이 기기 편집 내용은 덮어써집니다. 계속?')) return;
+      fetch('content.json?v=' + Date.now()).then(function (r) { if (!r.ok) throw new Error('content.json 없음'); return r.json(); })
+        .then(function (d) { if (!Array.isArray(d)) throw new Error('형식 오류');
+          data = d; selId = data.length ? data[0].id : null; save(); renderAll(); alert('공유본 ' + d.length + '개 불러옴'); })
+        .catch(function (e) { alert('불러오기 실패: ' + e.message); });
+    });
 
-    renderAll();
+    window.addEventListener('resize', renderMap);
+
+    // 시작 시 공유본(content.json) → 로컬 → 기본값 순으로 로드
+    (async function () {
+      data = await Store.loadShared();
+      selId = data.length ? data[0].id : null;
+      renderAll();
+      setTimeout(renderMap, 100);
+    })();
   </script>
 </body>
 </html>

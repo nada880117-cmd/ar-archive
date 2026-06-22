@@ -4,60 +4,68 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>AR 투어</title>
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-  <link rel="stylesheet" href="css/style.css">
   <script src="js/debug.js"></script>
   <script src="js/data-store.js"></script>
-  <script src="js/app.js"></script>
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/archive-object.js"></script>
+  <script src="js/spawner.js"></script>
   <script src="js/ui-overlay.js"></script>
-  <script src="js/marker-mode.js"></script>
+  <script src="js/app.js"></script>
 </head>
 <body>
+  <!-- ===== DOM 오버레이 UI (WebXR dom-overlay 로 카메라 위에 표시) ===== -->
   <div id="ui">
+    <!-- 진입 전 화면 -->
     <section id="enter-screen">
-      <div class="logo">🖼️</div>
-      <h1>AR 투어 준비</h1>
-      <p>아래 버튼을 누르면 카메라가 켜집니다.<br>벽에 걸린 <b>액자를 화면에 비추면</b> 그 내용이 나타납니다.</p>
-      <button id="enter-ar-btn">▶ AR 시작</button>
-      <p id="unsupported" class="warn" hidden></p>
+      <div class="logo">🏛️</div>
+      <h1>AR 모드 준비</h1>
+      <p>아래 버튼을 누르면 카메라가 켜지고,<br>주변 공간에 시대별 유물이 나타납니다.</p>
+      <button id="enter-ar-btn">▶ AR 모드 시작</button>
+      <p id="unsupported" class="warn" hidden>
+        ⚠ 이 기기/브라우저는 WebXR AR(ARCore)을 지원하지 않습니다.<br>
+        ARCore 지원 안드로이드 + 최신 Chrome 에서 열어주세요.
+      </p>
       <a class="back-link" href="index.html">← 처음으로</a>
     </section>
 
+    <!-- 진입 후 HUD -->
     <header id="hud" hidden>
-      <div id="pokedex">🖼️ <b><span id="found">0</span>/<span id="total">0</span></b></div>
-      <div id="hint">📷 액자를 화면 안에 비춰보세요</div>
+      <div id="pokedex">🏛️ 도감 <b><span id="found">0</span>/<span id="total">7</span></b></div>
+      <div id="hint">🎯 유물을 가운데 조준점에 맞추고 화면을 탭하세요</div>
       <button id="reset-btn" aria-label="다시 시작">↻</button>
       <button id="exit-ar-btn" aria-label="AR 종료">✕</button>
     </header>
 
+    <!-- 화면 중앙 조준점 -->
+    <div id="reticle" hidden></div>
+
+    <!-- 디버그 패널 (원인 추적용, 화면 하단) -->
+    <div id="debug"></div>
+
+    <!-- 발견 팝업 -->
     <div id="popup" class="popup-overlay" hidden>
       <div class="popup-card">
         <button class="popup-close" aria-label="닫기">✕</button>
         <div class="popup-body"></div>
       </div>
     </div>
-
-    <div id="debug"></div>
   </div>
 
-  <!-- ===== MindAR 이미지 인식 씬 (고정 타겟) ===== -->
+  <!-- ===== A-Frame WebXR AR 씬 ===== -->
   <a-scene
-    mindar-image="imageTargetSrc: targets/targets.mind; autoStart: false; maxTrack: 1"
+    app
+    archive-spawner
+    tap-picker
+    webxr="optionalFeatures: dom-overlay, local-floor, hit-test, anchors; overlayElement: #ui"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
-    color-space="sRGB"
-    renderer="colorManagement: true; physicallyCorrectLights: true">
-    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    loading-screen="enabled: false"
+    renderer="colorManagement: true; antialias: true">
 
-    <!-- 액자 인식 시 그 위에 뜨는 표시 (최대 12개 프레임 지원) -->
-    <a-entity id="t0" mindar-image-target="targetIndex: 0"><a-plane class="abg" width="1.3" height="0.34" position="0 0.62 0" material="color:#000; opacity:0.55; shader:flat"></a-plane><a-text class="atitle" value="" align="center" color="#FFD700" position="0 0.62 0.01" width="2.4"></a-text></a-entity>
-    <a-entity id="t1" mindar-image-target="targetIndex: 1"><a-plane class="abg" width="1.3" height="0.34" position="0 0.62 0" material="color:#000; opacity:0.55; shader:flat"></a-plane><a-text class="atitle" value="" align="center" color="#FFD700" position="0 0.62 0.01" width="2.4"></a-text></a-entity>
-    <a-entity id="t2" mindar-image-target="targetIndex: 2"><a-plane class="abg" width="1.3" height="0.34" position="0 0.62 0" material="color:#000; opacity:0.55; shader:flat"></a-plane><a-text class="atitle" value="" align="center" color="#FFD700" position="0 0.62 0.01" width="2.4"></a-text></a-entity>
-    <a-entity id="t3" mindar-image-target="targetIndex: 3"><a-plane class="abg" width="1.3" height="0.34" position="0 0.62 0" material="color:#000; opacity:0.55; shader:flat"></a-plane><a-text class="atitle" value="" align="center" color="#FFD700" position="0 0.62 0.01" width="2.4"></a-text></a-entity>
-    <a-entity id="t4" mindar-image-target="targetIndex: 4"><a-plane class="abg" width="1.3" height="0.34" position="0 0.62 0" material="color:#000; opacity:0.55; shader:flat"></a-plane><a-text class="atitle" value="" align="center" color="#FFD700" position="0 0.62 0.01" width="2.4"></a-text></a-entity>
-    <a-entity id="t5" mindar-image-target="targetIndex: 5"><a-plane class="abg" width="1.3" height="0.34" position="0 0.62 0" material="color:#000; opacity:0.55; shader:flat"></a-plane><a-text class="atitle" value="" align="center" color="#FFD700" position="0 0.62 0.01" width="2.4"></a-text></a-entity>
-    <a-entity id="t6" mindar-image-target="targetIndex: 6"><a-plane class="abg" width="1.3" height="0.34" position="0 0.62 0" material="color:#000; opacity:0.55; shader:flat"></a-plane><a-text class="atitle" value="" align="center" color="#FFD700" position="0 0.62 0.01" width="2.4"></a-text></a-entity>
+    <a-camera position="0 0 0"
+              look-controls="enabled: false"
+              wasd-controls="enabled: false"></a-camera>
   </a-scene>
 </body>
 </html>
