@@ -23,6 +23,7 @@ AFRAME.registerComponent('archive-spawner', {
     if (this.spawned) return;
     this.spawned = true;
     window.AppState && window.AppState.reset();
+    window.DBG && DBG.log('유물 ' + window.ERAS.length + '개 배치');
 
     window.ERAS.forEach((e) => {
       // 월드 위치 고정용 앵커 + 그 안에서 부유하는 유물
