@@ -15,7 +15,7 @@ AFRAME.registerComponent('archive-spawner', {
     const data = (window.Store ? window.Store.load() : []);
     if (window.AppState) {
       window.AppState.total = data.length;
-      window.AppState.reset();
+      window.AppState.load(); // 저장된 진행 복원 (새로고침해도 유지)
       const t = document.getElementById('total');
       if (t) t.textContent = data.length;
     }

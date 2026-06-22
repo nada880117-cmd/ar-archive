@@ -1,25 +1,42 @@
-/* app.js — 세션 진입/종료 제어 + 전역 상태(도감) */
+/* app.js — 세션 진입/종료, 진행 저장(localStorage), 탭(조준) 발견 */
 
 window.AppState = {
+  KEY: 'ar-progress',
   discovered: new Set(),
-  total: 7,
+  total: 0,
+
+  load() {
+    try {
+      const s = localStorage.getItem(this.KEY);
+      this.discovered = new Set(s ? JSON.parse(s) : []);
+    } catch (e) { this.discovered = new Set(); }
+    this.refresh();
+  },
+  persist() {
+    try { localStorage.setItem(this.KEY, JSON.stringify([...this.discovered])); } catch (e) {}
+  },
+  has(id) { return this.discovered.has(id); },
+
+  markDiscovered(id) {
+    if (!id || this.discovered.has(id)) return;
+    this.discovered.add(id);
+    this.persist();
+    this.refresh();
+    if (this.total > 0 && this.discovered.size >= this.total) {
+      setTimeout(() => window.UIOverlay && window.UIOverlay.showFinale(), 1000);
+    }
+  },
 
   reset() {
     this.discovered.clear();
-    const f = document.getElementById('found');
-    if (f) f.textContent = '0';
+    this.persist();
+    this.refresh();
+    (window._artifacts || []).forEach((a) => a.resetState && a.resetState());
   },
 
-  markDiscovered(era) {
-    if (this.discovered.has(era)) return;
-    this.discovered.add(era);
+  refresh() {
     const f = document.getElementById('found');
     if (f) f.textContent = this.discovered.size;
-
-    if (this.discovered.size >= this.total) {
-      // 모든 시대 발견 → 피날레
-      setTimeout(() => window.UIOverlay && window.UIOverlay.showFinale(), 1000);
-    }
   }
 };
 
@@ -28,48 +45,42 @@ AFRAME.registerComponent('app', {
     const scene = this.el;
     const enterScreen = document.getElementById('enter-screen');
     const hud = document.getElementById('hud');
+    const reticle = document.getElementById('reticle');
     const enterBtn = document.getElementById('enter-ar-btn');
     const exitBtn = document.getElementById('exit-ar-btn');
+    const resetBtn = document.getElementById('reset-btn');
 
-    document.getElementById('total').textContent = window.AppState.total;
     window.DBG && DBG.log('app init OK · A-Frame ' + AFRAME.version);
 
-    // WebXR immersive-ar 지원 여부 확인
     if (navigator.xr && navigator.xr.isSessionSupported) {
       navigator.xr.isSessionSupported('immersive-ar').then((ok) => {
         window.DBG && DBG.log('immersive-ar supported: ' + ok);
         if (!ok) this.markUnsupported(enterBtn);
-      }).catch((e) => { window.DBG && DBG.log('isSessionSupported err: ' + e); this.markUnsupported(enterBtn); });
+      }).catch((e) => { this.markUnsupported(enterBtn); });
     } else {
-      window.DBG && DBG.log('navigator.xr 없음 (WebXR 미지원 브라우저)');
       this.markUnsupported(enterBtn);
     }
 
-    // AR 진입 (사용자 제스처 필요)
     enterBtn.addEventListener('click', () => {
-      window.DBG && DBG.log('enterAR 호출');
       const p = scene.enterAR ? scene.enterAR() : scene.enterVR(true);
-      if (p && p.catch) {
-        p.catch((err) => {
-          window.DBG && DBG.log('AR 진입 실패: ' + (err && err.message ? err.message : err));
-          alert('AR 진입 실패: ' + (err && err.message ? err.message : err));
-        });
-      }
+      if (p && p.catch) p.catch((err) => alert('AR 진입 실패: ' + (err && err.message ? err.message : err)));
+    });
+    exitBtn.addEventListener('click', () => scene.exitVR());
+    resetBtn.addEventListener('click', () => {
+      if (confirm('도감을 처음부터 다시 시작할까요?')) window.AppState.reset();
     });
 
-    exitBtn.addEventListener('click', () => scene.exitVR());
-
     scene.addEventListener('enter-vr', () => {
-      window.DBG && DBG.log('enter-vr 이벤트 · ar-mode=' + scene.is('ar-mode'));
       if (scene.is('ar-mode')) {
         enterScreen.hidden = true;
         hud.hidden = false;
+        if (reticle) reticle.hidden = false;
       }
     });
-
     scene.addEventListener('exit-vr', () => {
       enterScreen.hidden = false;
       hud.hidden = true;
+      if (reticle) reticle.hidden = true;
       window.UIOverlay && window.UIOverlay.closePopup();
     });
   },
@@ -78,5 +89,40 @@ AFRAME.registerComponent('app', {
     const warn = document.getElementById('unsupported');
     if (warn) warn.hidden = false;
     if (btn) { btn.disabled = true; btn.textContent = 'AR 미지원 기기'; }
+  }
+});
+
+/* 화면 탭 → 화면 중앙에 가장 가까운 유물을 발견(조준식) */
+AFRAME.registerComponent('tap-picker', {
+  init() {
+    this.fwd = new THREE.Vector3();
+    this.camPos = new THREE.Vector3();
+    this.to = new THREE.Vector3();
+
+    this.el.addEventListener('enter-vr', () => {
+      const s = this.el.xrSession;
+      if (s && !this._bound) {
+        this._bound = true;
+        s.addEventListener('select', () => this.pick());
+      }
+    });
+  },
+
+  pick() {
+    const popup = document.getElementById('popup');
+    if (popup && !popup.hidden) return;        // 팝업 떠 있으면 무시
+    const cam = this.el.camera;
+    if (!cam || !window._artifacts) return;
+
+    cam.getWorldPosition(this.camPos);
+    cam.getWorldDirection(this.fwd);           // 카메라 정면(-z)
+    let best = null, bestAng = 0.45;           // 약 26도 이내
+    window._artifacts.forEach((a) => {
+      a.worldPos(this.to);
+      this.to.sub(this.camPos).normalize();
+      const ang = this.fwd.angleTo(this.to);
+      if (ang < bestAng) { bestAng = ang; best = a; }
+    });
+    if (best) best.open();
   }
 });

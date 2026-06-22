@@ -32,9 +32,13 @@
     <!-- 진입 후 HUD -->
     <header id="hud" hidden>
       <div id="pokedex">🏛️ 도감 <b><span id="found">0</span>/<span id="total">7</span></b></div>
-      <div id="hint">📡 빛나는 유물을 향해 걸어가세요</div>
+      <div id="hint">🎯 유물을 가운데 조준점에 맞추고 화면을 탭하세요</div>
+      <button id="reset-btn" aria-label="다시 시작">↻</button>
       <button id="exit-ar-btn" aria-label="AR 종료">✕</button>
     </header>
+
+    <!-- 화면 중앙 조준점 -->
+    <div id="reticle" hidden></div>
 
     <!-- 디버그 패널 (원인 추적용, 화면 하단) -->
     <div id="debug"></div>
@@ -52,6 +56,7 @@
   <a-scene
     app
     archive-spawner
+    tap-picker
     webxr="optionalFeatures: dom-overlay, local-floor, hit-test, anchors; overlayElement: #ui"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
