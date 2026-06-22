@@ -2,6 +2,9 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; font-family: "Noto Sans KR", system-ui, sans-serif; }
 
+/* hidden 속성은 display 규칙보다 항상 우선 (팝업/HUD/시작화면 토글의 핵심) */
+[hidden] { display: none !important; }
+
 /* ===== 온보딩 (index.html) ===== */
 body.onboarding {
   background: radial-gradient(circle at 50% 30%, #1b2a4a, #0a1020);
