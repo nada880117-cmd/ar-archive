@@ -23,19 +23,38 @@ AFRAME.registerComponent('archive-spawner', {
     if (this.spawned) return;
     this.spawned = true;
     window.AppState && window.AppState.reset();
-    window.DBG && DBG.log('유물 ' + window.ERAS.length + '개 배치');
 
-    window.ERAS.forEach((e) => {
-      // 월드 위치 고정용 앵커 + 그 안에서 부유하는 유물
-      const anchor = document.createElement('a-entity');
-      anchor.setAttribute('position', e.pos);
+    try {
+      // 진단용: 정면 1m, 큰 빨간 발광 박스 — 이게 보이면 렌더링은 정상
+      const test = document.createElement('a-box');
+      test.setAttribute('position', '0 1.4 -1');
+      test.setAttribute('scale', '0.3 0.3 0.3');
+      test.setAttribute('material', 'color: #ff2d2d; emissive: #ff2d2d; emissiveIntensity: 1');
+      this.el.appendChild(test);
+      window.DBG && DBG.log('TEST 빨간박스 배치 @정면 1m');
 
-      const obj = document.createElement('a-entity');
-      obj.setAttribute('archive-object',
-        `era: ${e.era}; title: ${e.title}; year: ${e.year}; color: ${e.color}`);
-      anchor.appendChild(obj);
+      window.ERAS.forEach((e) => {
+        const anchor = document.createElement('a-entity');
+        anchor.setAttribute('position', e.pos);
+        const obj = document.createElement('a-entity');
+        obj.setAttribute('archive-object',
+          `era: ${e.era}; title: ${e.title}; year: ${e.year}; color: ${e.color}`);
+        anchor.appendChild(obj);
+        this.el.appendChild(anchor);
+      });
+      window.DBG && DBG.log('유물 ' + window.ERAS.length + '개 배치 완료');
 
-      this.el.appendChild(anchor);
-    });
+      // 1.5초 뒤 카메라/유물 월드좌표 확인
+      setTimeout(() => {
+        try {
+          const cam = this.el.camera;
+          const cp = new THREE.Vector3();
+          if (cam) cam.getWorldPosition(cp);
+          window.DBG && DBG.log('카메라 위치 ' + cp.x.toFixed(2) + ',' + cp.y.toFixed(2) + ',' + cp.z.toFixed(2));
+        } catch (e) { window.DBG && DBG.log('pos log err: ' + e.message); }
+      }, 1500);
+    } catch (e) {
+      window.DBG && DBG.log('SPAWN ERROR: ' + e.message);
+    }
   }
 });
