@@ -9,17 +9,14 @@ window.Store = {
   defaults() {
     return [
       { id: 'e1', title: '창립기', year: '1980', color: '#2E86C1',
-        x: 0, y: 1.3, z: -2,
-        text: '여기에 이 시대의 설명을 입력하세요. (예: 회사 창립 배경과 초기 이야기)',
-        images: [], video: '' },
+        marker: '', text: '여기에 이 액자(시대)의 설명을 입력하세요.',
+        images: [], video: '', x: 0, y: 1.3, z: -2 },
       { id: 'e2', title: '성장기', year: '1995', color: '#27AE60',
-        x: 2, y: 1.4, z: -1,
-        text: '여기에 설명을 입력하세요.',
-        images: [], video: '' },
+        marker: '', text: '여기에 설명을 입력하세요.',
+        images: [], video: '', x: 2, y: 1.4, z: -1 },
       { id: 'e3', title: '현재 & 미래', year: '2025', color: '#C0392B',
-        x: -2, y: 1.4, z: -1,
-        text: '여기에 설명을 입력하세요.',
-        images: [], video: '' }
+        marker: '', text: '여기에 설명을 입력하세요.',
+        images: [], video: '', x: -2, y: 1.4, z: -1 }
     ];
   },
 
@@ -48,8 +45,8 @@ window.Store = {
     const palette = ['#2E86C1', '#27AE60', '#16A085', '#8E44AD', '#E67E22', '#2980B9', '#C0392B', '#F39C12'];
     return {
       id: 'e' + Math.floor(performance.now()) + '_' + (this._n = (this._n || 0) + 1),
-      title: '새 시대', year: '', color: palette[(this._n) % palette.length],
-      x: 0, y: 1.4, z: -2, text: '', images: [], video: ''
+      title: '새 프레임', year: '', color: palette[(this._n) % palette.length],
+      marker: '', text: '', images: [], video: '', x: 0, y: 1.4, z: -2
     };
   }
 };

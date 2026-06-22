@@ -27,7 +27,7 @@ window.UIOverlay = {
     (data.images || []).forEach((src) => {
       if (src) media += `<img class="c-img" src="${this.esc(src)}" alt="">`;
     });
-    if (data.video) media += `<video class="c-vid" src="${this.esc(data.video)}" controls playsinline></video>`;
+    if (data.video) media += `<video class="c-vid" src="${this.esc(data.video)}" controls autoplay playsinline></video>`;
     if (!media) media = `<div class="ph-photo" style="background:${this.esc(data.color)}">사진/영상 자리</div>`;
 
     const text = this.esc(data.text).replace(/\n/g, '<br>');
