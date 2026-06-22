@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>AR 아카이브 편집</title>
+  <script src="js/data-store.js"></script>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; font-family: "Noto Sans KR", system-ui, sans-serif;
+           background: #0e1525; color: #e9eef7; padding-bottom: 40px; }
+    header { position: sticky; top: 0; z-index: 5; background: #11192c;
+             padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+             border-bottom: 1px solid #243049; }
+    header h1 { font-size: 16px; margin: 0; flex: 1 1 100%; }
+    .btn { border: 0; border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 700;
+           color: #fff; background: #2E86C1; }
+    .btn.gray { background: #33415c; }
+    .btn.green { background: #27AE60; }
+    .saved { font-size: 12px; color: #6fe39a; margin-left: auto; }
+
+    .wrap { padding: 14px; max-width: 560px; margin: 0 auto; }
+    .card { background: #16203a; border: 1px solid #243049; border-radius: 14px; padding: 14px; margin-bottom: 14px; }
+    .card h2 { font-size: 14px; margin: 0 0 10px; color: #9fb3d1; }
+
+    /* 배치 지도 */
+    #map { position: relative; width: 100%; aspect-ratio: 1/1; max-width: 420px; margin: 0 auto;
+           background:
+             linear-gradient(#243049 1px, transparent 1px) 0 0/100% 12.5%,
+             linear-gradient(90deg, #243049 1px, transparent 1px) 0 0/12.5% 100%,
+             #0b1222;
+           border: 1px solid #2c3a57; border-radius: 12px; touch-action: none; overflow: hidden; }
+    #map .center { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+                   width: 22px; height: 22px; border-radius: 50%; background: #fff;
+                   display: grid; place-items: center; font-size: 12px; }
+    #map .axis { position: absolute; color: #4a5e83; font-size: 11px; }
+    #map .ax-f { top: 4px; left: 50%; transform: translateX(-50%); }
+    #map .ax-b { bottom: 4px; left: 50%; transform: translateX(-50%); }
+    #map .ax-l { left: 4px; top: 50%; transform: translateY(-50%); }
+    #map .ax-r { right: 4px; top: 50%; transform: translateY(-50%); }
+    .dot { position: absolute; width: 34px; height: 34px; border-radius: 50%;
+           transform: translate(-50%,-50%); display: grid; place-items: center;
+           font-size: 10px; font-weight: 700; color: #fff; cursor: grab;
+           border: 2px solid rgba(255,255,255,.4); box-shadow: 0 0 8px rgba(0,0,0,.5); }
+    .dot.sel { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.5); }
+    .dot span { pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,.8); }
+    .hint { color: #6f86a8; font-size: 12px; text-align: center; margin: 8px 0 0; }
+
+    /* 유물 목록 */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { border: 1px solid #2c3a57; border-radius: 999px; padding: 7px 12px; font-size: 13px;
+            display: flex; align-items: center; gap: 7px; background: #0f1830; }
+    .chip.sel { border-color: #fff; }
+    .chip i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+
+    /* 폼 */
+    label { display: block; font-size: 12px; color: #9fb3d1; margin: 12px 0 4px; }
+    input, textarea, select { width: 100%; background: #0f1830; border: 1px solid #2c3a57;
+            border-radius: 8px; color: #e9eef7; padding: 10px; font-size: 14px; font-family: inherit; }
+    textarea { resize: vertical; min-height: 64px; }
+    .row { display: flex; gap: 10px; }
+    .row > div { flex: 1; }
+    input[type=color] { padding: 4px; height: 42px; }
+    input[type=range] { padding: 0; }
+    .danger { background: #c0392b; }
+    .muted { color: #6f86a8; font-size: 12px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🏛️ AR 아카이브 편집</h1>
+    <button class="btn green" id="ar-link">AR로 보기 ▶</button>
+    <button class="btn gray" id="export">내보내기</button>
+    <button class="btn gray" id="import">가져오기</button>
+    <span class="saved" id="saved">✓ 자동 저장됨</span>
+    <input type="file" id="file" accept="application/json" hidden>
+  </header>
+
+  <div class="wrap">
+    <!-- 배치 지도 -->
+    <div class="card">
+      <h2>📍 배치 (위에서 본 모습 · 가운데가 시작 지점)</h2>
+      <div id="map">
+        <div class="center" title="시작 지점">🧍</div>
+        <div class="axis ax-f">앞</div>
+        <div class="axis ax-b">뒤</div>
+        <div class="axis ax-l">왼쪽</div>
+        <div class="axis ax-r">오른쪽</div>
+      </div>
+      <p class="hint">유물(원)을 끌어서 위치를 옮기세요. 탭하면 선택됩니다. (범위 ±5m)</p>
+    </div>
+
+    <!-- 유물 목록 -->
+    <div class="card">
+      <h2>🔵 유물 목록</h2>
+      <div class="chips" id="chips"></div>
+      <button class="btn" id="add" style="margin-top:12px;">＋ 새 유물 추가</button>
+    </div>
+
+    <!-- 선택된 유물 편집 -->
+    <div class="card" id="editor">
+      <h2>✏️ 선택한 유물 편집</h2>
+      <div id="form"></div>
+    </div>
+
+    <p class="muted">
+      ※ 편집 내용은 <b>이 태블릿</b>에 자동 저장됩니다. 같은 태블릿의 AR에서 바로 반영돼요.<br>
+      ※ 사진/영상은 인터넷 주소(https://…) 또는 저장소 안 경로(assets/photos/사진.jpg)를 넣으세요.<br>
+      ※ 백업하거나 다른 기기로 옮기려면 <b>내보내기</b>로 JSON을 저장하세요.
+    </p>
+  </div>
+
+  <script>
+    var RANGE = 5; // 지도 표시 범위 (±5m)
+    var eras = Store.load();
+    var selId = eras.length ? eras[0].id : null;
+
+    var mapEl = document.getElementById('map');
+    var chipsEl = document.getElementById('chips');
+    var formEl = document.getElementById('form');
+    var savedEl = document.getElementById('saved');
+
+    function save() {
+      Store.save(eras);
+      savedEl.style.opacity = '1';
+      savedEl.textContent = '✓ 자동 저장됨';
+    }
+    function sel() { return eras.find(function (e) { return e.id === selId; }); }
+
+    /* ---------- 지도 ---------- */
+    function xToPx(x) { return (x + RANGE) / (2 * RANGE) * mapEl.clientWidth; }
+    function zToPy(z) { return (z + RANGE) / (2 * RANGE) * mapEl.clientHeight; }
+    function pxToX(px) { return Math.max(-RANGE, Math.min(RANGE, px / mapEl.clientWidth * 2 * RANGE - RANGE)); }
+    function pyToZ(py) { return Math.max(-RANGE, Math.min(RANGE, py / mapEl.clientHeight * 2 * RANGE - RANGE)); }
+
+    function renderMap() {
+      // 기존 dot 제거
+      Array.prototype.slice.call(mapEl.querySelectorAll('.dot')).forEach(function (d) { d.remove(); });
+      eras.forEach(function (e) {
+        var dot = document.createElement('div');
+        dot.className = 'dot' + (e.id === selId ? ' sel' : '');
+        dot.style.background = e.color;
+        dot.style.left = xToPx(e.x) + 'px';
+        dot.style.top = zToPy(e.z) + 'px';
+        dot.innerHTML = '<span>' + (e.title || '').slice(0, 4) + '</span>';
+        attachDrag(dot, e);
+        mapEl.appendChild(dot);
+      });
+    }
+
+    function attachDrag(dot, e) {
+      var dragging = false;
+      dot.addEventListener('pointerdown', function (ev) {
+        dragging = true; selId = e.id; dot.setPointerCapture(ev.pointerId);
+        renderAll();
+      });
+      dot.addEventListener('pointermove', function (ev) {
+        if (!dragging) return;
+        var r = mapEl.getBoundingClientRect();
+        e.x = +pxToX(ev.clientX - r.left).toFixed(2);
+        e.z = +pyToZ(ev.clientY - r.top).toFixed(2);
+        dot.style.left = xToPx(e.x) + 'px';
+        dot.style.top = zToPy(e.z) + 'px';
+        updatePosFields(e);
+      });
+      function end() { if (dragging) { dragging = false; save(); } }
+      dot.addEventListener('pointerup', end);
+      dot.addEventListener('pointercancel', end);
+    }
+
+    /* ---------- 목록 ---------- */
+    function renderChips() {
+      chipsEl.innerHTML = '';
+      eras.forEach(function (e) {
+        var c = document.createElement('div');
+        c.className = 'chip' + (e.id === selId ? ' sel' : '');
+        c.innerHTML = '<i style="background:' + e.color + '"></i>' + (e.title || '(제목없음)');
+        c.addEventListener('click', function () { selId = e.id; renderAll(); });
+        chipsEl.appendChild(c);
+      });
+    }
+
+    /* ---------- 폼 ---------- */
+    function updatePosFields(e) {
+      var xf = document.getElementById('f-x'), zf = document.getElementById('f-z');
+      if (xf) xf.value = e.x; if (zf) zf.value = e.z;
+    }
+
+    function renderForm() {
+      var e = sel();
+      if (!e) { formEl.innerHTML = '<p class="muted">유물을 추가하거나 선택하세요.</p>'; return; }
+      formEl.innerHTML =
+        '<label>제목</label><input id="f-title" value="' + esc(e.title) + '">' +
+        '<div class="row"><div><label>연도</label><input id="f-year" value="' + esc(e.year) + '"></div>' +
+        '<div><label>색상</label><input id="f-color" type="color" value="' + (e.color || '#2E86C1') + '"></div></div>' +
+        '<label>설명</label><textarea id="f-text">' + esc(e.text) + '</textarea>' +
+        '<label>사진 주소 (한 줄에 하나)</label><textarea id="f-images" placeholder="assets/photos/사진1.jpg">' + esc((e.images || []).join('\n')) + '</textarea>' +
+        '<label>영상 주소</label><input id="f-video" value="' + esc(e.video) + '" placeholder="assets/videos/영상.mp4">' +
+        '<div class="row"><div><label>높이 (y, m)</label><input id="f-y" type="range" min="0" max="3" step="0.1" value="' + (e.y || 1.4) + '"><div class="muted" id="f-y-val">' + (e.y || 1.4) + 'm</div></div></div>' +
+        '<div class="row" style="margin-top:6px;"><div><label>좌우 (x)</label><input id="f-x" value="' + e.x + '" readonly></div><div><label>앞뒤 (z)</label><input id="f-z" value="' + e.z + '" readonly></div></div>' +
+        '<button class="btn danger" id="del" style="margin-top:16px;">이 유물 삭제</button>';
+
+      bind('f-title', 'title'); bind('f-year', 'year'); bind('f-text', 'text');
+      bind('f-color', 'color', function () { renderMap(); renderChips(); });
+      bind('f-video', 'video');
+      document.getElementById('f-images').addEventListener('input', function () {
+        e.images = this.value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean); save();
+      });
+      var yEl = document.getElementById('f-y');
+      yEl.addEventListener('input', function () {
+        e.y = +this.value; document.getElementById('f-y-val').textContent = e.y + 'm'; save();
+      });
+      document.getElementById('del').addEventListener('click', function () {
+        if (!confirm('"' + (e.title || '이 유물') + '" 을(를) 삭제할까요?')) return;
+        eras = eras.filter(function (x) { return x.id !== e.id; });
+        selId = eras.length ? eras[0].id : null; save(); renderAll();
+      });
+    }
+
+    function bind(id, key, after) {
+      var el = document.getElementById(id); if (!el) return;
+      el.addEventListener('input', function () {
+        var e = sel(); if (!e) return; e[key] = this.value; save();
+        if (key === 'title') renderChips(), renderMap();
+        if (after) after();
+      });
+    }
+
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+    function renderAll() { renderMap(); renderChips(); renderForm(); }
+
+    /* ---------- 버튼 ---------- */
+    document.getElementById('add').addEventListener('click', function () {
+      var e = Store.blank(); eras.push(e); selId = e.id; save(); renderAll();
+    });
+    document.getElementById('ar-link').addEventListener('click', function () { location.href = 'ar.html'; });
+    document.getElementById('export').addEventListener('click', function () {
+      var blob = new Blob([JSON.stringify(eras, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = 'ar-archive-content.json'; a.click();
+    });
+    document.getElementById('import').addEventListener('click', function () { document.getElementById('file').click(); });
+    document.getElementById('file').addEventListener('change', function (ev) {
+      var f = ev.target.files[0]; if (!f) return;
+      var r = new FileReader();
+      r.onload = function () {
+        try {
+          var d = JSON.parse(r.result);
+          if (Array.isArray(d)) { eras = d; selId = eras.length ? eras[0].id : null; save(); renderAll(); alert('가져오기 완료'); }
+          else alert('형식이 올바르지 않습니다.');
+        } catch (e) { alert('JSON 읽기 실패: ' + e.message); }
+      };
+      r.readAsText(f);
+    });
+
+    window.addEventListener('resize', renderMap);
+    renderAll();
+  </script>
+</body>
+</html>

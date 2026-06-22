@@ -87,7 +87,8 @@ AFRAME.registerComponent('archive-object', {
     this.core.setAttribute('animation__pop',
       'property: scale; from: 1 1 1; to: 1.8 1.8 1.8; dir: alternate; loop: 2; dur: 220; easing: easeOutBack');
 
-    window.UIOverlay && window.UIOverlay.showDiscovery(this.data);
-    window.AppState && window.AppState.markDiscovered(this.data.era);
+    const d = this.el.eraData || this.data;
+    window.UIOverlay && window.UIOverlay.showDiscovery(d);
+    window.AppState && window.AppState.markDiscovered(d.id || d.title);
   }
 });

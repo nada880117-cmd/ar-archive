@@ -16,15 +16,26 @@ window.UIOverlay = {
     });
   },
 
+  esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  },
+
   showDiscovery(data) {
     if (!this.popup) return;
-    // TODO(Phase3): placeholder → 실제 사진/영상/텍스트 콘텐츠로 교체
+    let media = '';
+    (data.images || []).forEach((src) => {
+      if (src) media += `<img class="c-img" src="${this.esc(src)}" alt="">`;
+    });
+    if (data.video) media += `<video class="c-vid" src="${this.esc(data.video)}" controls playsinline></video>`;
+    if (!media) media = `<div class="ph-photo" style="background:${this.esc(data.color)}">사진/영상 자리</div>`;
+
+    const text = this.esc(data.text).replace(/\n/g, '<br>');
     this.body.innerHTML = `
       <div class="badge">✨ 새로운 시대 발견!</div>
-      <h2>${data.title} <small>${data.year || ''}</small></h2>
-      <div class="ph-photo" style="background:${data.color}">사진 자리</div>
-      <p>여기에 <b>${data.title}</b>의 역사 사진 · 인터뷰 영상 · 설명 텍스트가
-      들어갑니다. (현재는 임시 콘텐츠 — Phase 3 에서 실제 자료로 교체)</p>
+      <h2>${this.esc(data.title)} <small>${this.esc(data.year)}</small></h2>
+      ${media}
+      <p>${text || '설명이 아직 없습니다. 편집 화면에서 입력하세요.'}</p>
     `;
     this.popup.hidden = false;
   },

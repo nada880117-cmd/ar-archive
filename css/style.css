@@ -29,6 +29,8 @@ body.onboarding {
   box-shadow: 0 8px 24px rgba(46,134,193,.4);
 }
 #intro .note { color: #6f86a8; font-size: 12px; margin-top: 18px; }
+#intro .edit-link { display: inline-block; color: #8fa6c6; font-size: 13px; margin-top: 16px;
+  border: 1px solid #33415c; border-radius: 8px; padding: 8px 16px; text-decoration: none; }
 
 /* ===== AR DOM 오버레이 (ar.html) ===== */
 #ui { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
@@ -101,6 +103,8 @@ body.onboarding {
 }
 .popup-body .ph-photo.gold { background: #E6A700; }
 .popup-body p { line-height: 1.6; color: #444; }
+.popup-body .c-img,
+.popup-body .c-vid { width: 100%; border-radius: 12px; margin: 6px 0 10px; display: block; }
 
 /* A-Frame 기본 UI 강제 제거 (흰 VR 버튼 / 권한 모달 등) */
 .a-enter-vr, .a-enter-ar,
