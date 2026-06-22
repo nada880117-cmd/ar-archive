@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>AR 투어</title>
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/archive-object.js"></script>
+  <script src="js/spawner.js"></script>
+  <script src="js/ui-overlay.js"></script>
+  <script src="js/app.js"></script>
+</head>
+<body>
+  <!-- ===== DOM 오버레이 UI (WebXR dom-overlay 로 카메라 위에 표시) ===== -->
+  <div id="ui">
+    <!-- 진입 전 화면 -->
+    <section id="enter-screen">
+      <div class="logo">🏛️</div>
+      <h1>AR 모드 준비</h1>
+      <p>아래 버튼을 누르면 카메라가 켜지고,<br>주변 공간에 시대별 유물이 나타납니다.</p>
+      <button id="enter-ar-btn">▶ AR 모드 시작</button>
+      <p id="unsupported" class="warn" hidden>
+        ⚠ 이 기기/브라우저는 WebXR AR(ARCore)을 지원하지 않습니다.<br>
+        ARCore 지원 안드로이드 + 최신 Chrome 에서 열어주세요.
+      </p>
+      <a class="back-link" href="index.html">← 처음으로</a>
+    </section>
+
+    <!-- 진입 후 HUD -->
+    <header id="hud" hidden>
+      <div id="pokedex">🏛️ 도감 <b><span id="found">0</span>/<span id="total">7</span></b></div>
+      <div id="hint">📡 빛나는 유물을 향해 걸어가세요</div>
+      <button id="exit-ar-btn" aria-label="AR 종료">✕</button>
+    </header>
+
+    <!-- 발견 팝업 -->
+    <div id="popup" class="popup-overlay" hidden>
+      <div class="popup-card">
+        <button class="popup-close" aria-label="닫기">✕</button>
+        <div class="popup-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== A-Frame WebXR AR 씬 ===== -->
+  <a-scene
+    app
+    archive-spawner
+    webxr="optionalFeatures: dom-overlay, local-floor, hit-test, anchors; overlayElement: #ui"
+    vr-mode-ui="enabled: false"
+    loading-screen="enabled: false"
+    renderer="colorManagement: true; antialias: true">
+
+    <a-camera position="0 1.6 0"
+              look-controls="enabled: false"
+              wasd-controls="enabled: false"></a-camera>
+  </a-scene>
+</body>
+</html>

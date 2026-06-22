@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QR 생성 도구</title>
+  <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0a1020; color: #fff;
+           display: flex; flex-direction: column; align-items: center; padding: 32px; }
+    h1 { font-size: 20px; }
+    input { width: min(90vw, 480px); padding: 12px; border-radius: 8px; border: 0; font-size: 15px; }
+    button { margin-top: 12px; padding: 12px 28px; border: 0; border-radius: 8px;
+             background: #2E86C1; color: #fff; font-weight: 700; font-size: 15px; }
+    #qr { background: #fff; padding: 16px; border-radius: 12px; margin-top: 24px; }
+    p.hint { color: #8fa6c6; font-size: 13px; max-width: 480px; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>🏛️ AR 아카이브 QR 생성</h1>
+  <p class="hint">GitHub Pages 배포 후 발급된 <b>index.html 의 https 주소</b>를 붙여넣고 생성하세요.
+     (예: https://계정.github.io/company-ar-archive/)</p>
+  <input id="url" type="text" placeholder="https://계정.github.io/company-ar-archive/">
+  <button id="gen">QR 생성</button>
+  <div id="qr"></div>
+
+  <script>
+    const box = document.getElementById('qr');
+    let qr = null;
+    document.getElementById('gen').addEventListener('click', () => {
+      const url = document.getElementById('url').value.trim();
+      if (!url) { alert('주소를 입력하세요.'); return; }
+      box.innerHTML = '';
+      qr = new QRCode(box, { text: url, width: 320, height: 320, correctLevel: QRCode.CorrectLevel.M });
+    });
+  </script>
+</body>
+</html>
