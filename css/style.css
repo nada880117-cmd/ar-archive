@@ -99,6 +99,13 @@ body.onboarding {
 .popup-body .ph-photo.gold { background: #E6A700; }
 .popup-body p { line-height: 1.6; color: #444; }
 
+/* A-Frame 기본 UI 강제 제거 (흰 VR 버튼 / 권한 모달 등) */
+.a-enter-vr, .a-enter-ar,
+.a-enter-vr-button, .a-enter-ar-button,
+.a-orientation-modal, .a-modal {
+  display: none !important;
+}
+
 /* 디버그 패널 */
 #debug {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
